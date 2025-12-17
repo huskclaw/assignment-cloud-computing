@@ -1,0 +1,77 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: case5_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/auth:/etc/nginx/auth:ro
+    depends_on:
+      - app_insert
+      - app_delete
+      - phpmyadmin
+    networks:
+      - case5_net
+
+  app_insert:
+    build: ./app-insert
+    container_name: case5_app_insert
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASS: ${MYSQL_PASSWORD}
+    expose:
+      - "80"
+    networks:
+      - case5_net
+
+  app_delete:
+    build: ./app-delete
+    container_name: case5_app_delete
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASS: ${MYSQL_PASSWORD}
+    expose:
+      - "80"
+    networks:
+      - case5_net
+
+  mysql:
+    image: mysql:8.0
+    container_name: case5_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - case5_mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - case5_net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: case5_phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ABSOLUTE_URI: /phpmyadmin
+    expose:
+      - "80"
+    depends_on:
+      - mysql
+    networks:
+      - case5_net
+
+networks:
+  case5_net:
+
+volumes:
+  case5_mysql_data:
